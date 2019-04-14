@@ -151,6 +151,7 @@ else
     ucf101_train_FeaturesClassLabelArray(ucf101_train_FeaturesClassLabelArray==0)=1;
 
     if sampleInd == 1
+        % Multiplicative lagged Fibonacci generator
         s = RandStream('mlfg6331_64');
         numFeaturePointsPerClass = zeros(length(actions),1);
         
@@ -168,7 +169,6 @@ else
         ucf101_train_Features = randomSampleFeaturesPerClass;
         ucf101_train_FeaturesLabels = randomSampleLabelsPerClass;
 
-        
     else
         % Cluster all the training features into clusters
         % If you want to cluster all the features
@@ -194,10 +194,7 @@ if sampleInd == 1
     % batch_array = [1, 458844, 917687, 1376530, 1835373, 2294216, 2753059,...
       %               3211902, 3670745, 4129588, 4588431, 5047274];
     batch_array = 1:batch_size:length(ucf101_train_FeaturesArray); 
-    
-    %batch_size = 3;
-    %batch_array = 1:batch_size:10;
-    
+        
     % pre-allocate
     ucf101_final_membership = zeros(1,batch_array(end));
     
@@ -258,8 +255,8 @@ ucf101_train_finalRepresentation_nor = (ucf101_train_finalRepresentation'./repma
 
 disp('Successfully Building BoVW in ucf101 using training set!')
 
-%% Now for the test data (get BoVW representations for test set)
 
+%% Now for the test data (get BoVW representations for test set)
 % Preload features if already computed
 if exist(sprintf('ucf101_test_STIPs.mat'), 'file')
     disp('Loading STIPs features for testing set in UCF101 ...');
@@ -454,8 +451,7 @@ else
 end
 
 %% Final Feature mat 
-
-if exist(sprintf('ucf101-STIP-allFeatures-%d-numclust.mat', numClusters))
+if exist(sprintf('ucf101-STIP-allFeatures-%d-numclust.mat', numClusters), 'file')
    load(sprintf('ucf101-STIP-allFeatures-%d-numclust.mat', numClusters));
    disp('Loading ucf101-STIP-allfeatures.mat file done');
 
@@ -479,3 +475,4 @@ else
                     'ucf101');
     disp('Save all features, labels and parameters for train and test in ucf101')
 end
+disp('Everything is done !')
