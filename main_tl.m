@@ -15,7 +15,7 @@ numClusters = 4000;
 % Be careful to change it when using different datasets
 % weizmann, kth, hmdb51, ucf101
 
-source_string = 'kth';
+source_string = 'ucf101';
 target_string = 'hmdb51';
 
 % or 'IDT'
@@ -38,7 +38,7 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = kth;
+source = ucf101;
 target = hmdb51;
 %% Resampling
 
@@ -240,6 +240,8 @@ for step=1:floor(count_perCat*stepSize):count_perCat
     stat_pmt_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_pmtsvm);
     
 end
+% End: Train & test target classifier with increasing number of samples %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% F1 score
 mean_F1_non_svm = zeros(step_count,1);
@@ -253,9 +255,6 @@ for i=1:step_count
     mean_F1_a_svm(i) =  mean(stat_a_svm(i).Fscore);
     mean_F1_pmt_svm(i) =  mean(stat_pmt_svm(i).Fscore);
 end
-
-% End: Train & test target classifier with increasing number of samples %
-
 
 %% Draw comparison figure between SVM, A-SVM, PMT-SVM
 fprintf('Drawing the F1 curves.\n');
@@ -272,17 +271,10 @@ drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
 fprintf('End Drawing.\n');
 
 
-
-
-
-
-
-
-
-
-
-
-
+%% Save results
+save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d%%.mat'],stepSize*100), ...
+            'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
+            'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm');
 
 
 
