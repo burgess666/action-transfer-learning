@@ -9,18 +9,18 @@
 actions = {'Biking', 'Clapping', 'Diving', 'GolfSwing', 'Jumping', ...
               'Punch', 'PushUps', 'Running', 'Walking', 'Waving'};
 addpath('IDT_BOVW');
-addpath('/Volumes/Kellan/datasets/experimentTL');
-
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/hmdb51';
+matPath = '/Volumes/Kellan/datasets/experimentTL';
+addpath(matPath);
 
 % Load all IDT HOG-HOF features corresponding to these videos
 % offset = 5;
 hmdb51_train_globalSeqCount = 0; 
 
 % Preload features if already computed
-if exist(sprintf('hmdb51_train_IDTs.mat'), 'file')
-    load(sprintf('hmdb51_train_IDTs.mat'));
+if exist(sprintf([matPath 'hmdb51_train_IDTs.mat']), 'file')
+    load(sprintf([matPath 'hmdb51_train_IDTs.mat']);
     disp('Loading IDTs features for training set in hmdb51 done.');
 
 else            
@@ -107,7 +107,7 @@ else
             end
         end
     end
-save('hmdb51_train_IDTs.mat', 'hmdb51_train_FeaturesArray', ...
+save([matPath 'hmdb51_train_IDTs.mat'], 'hmdb51_train_FeaturesArray', ...
      'hmdb51_train_FeaturesClassLabelArray',...
      'hmdb51_train_ClassLabels',...
      'hmdb51_train_SeqTotalFeatNum',...
@@ -251,9 +251,10 @@ disp('Successfully Building BoVW in hmdb51 using training set!')
 
 %% Now for the test data (get BoVW representations for test set)
 % Preload features if already computed
-if exist(sprintf('hmdb51_test_IDTs.mat'), 'file')
+if exist(sprintf([matPath 'hmdb51_test_IDTs.mat']), 'file')
+    load(sprintf([matPath 'hmdb51_test_IDTs.mat']));
     disp('Loading IDTs features for testing set in hmdb51 ...');
-    load(sprintf('hmdb51_test_IDTs.mat'));
+
 else
     % Load IDT features corresponding to these videos
     %offset = 5;
@@ -343,7 +344,7 @@ else
         end
     end
     
-    save('hmdb51_test_IDTs.mat', ...
+    save([matPath 'hmdb51_test_IDTs.mat'], ...
          'hmdb51_test_FeaturesArray', ...
          'hmdb51_test_FeaturesClassLabelArray',...
          'hmdb51_test_ClassLabels',...

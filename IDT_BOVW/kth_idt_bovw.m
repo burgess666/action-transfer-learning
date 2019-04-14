@@ -8,19 +8,19 @@
 
 actions = {'Boxing', 'Clapping', 'Running', 'Walking', 'Waving'};
 addpath('IDT_BOVW');
-addpath('/Volumes/Kellan/datasets/experimentTL');
-
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/kth';
+matPath = '/Volumes/Kellan/datasets/experimentTL';
+addpath(matPath);
 
 % Load all IDT HOG-HOF features corresponding to these videos
 % offset = 5;
 kth_train_globalSeqCount = 0; 
 
 % Preload features if already computed
-if exist(sprintf('kth_train_IDTs.mat'), 'file')
-    load(sprintf('kth_train_IDTs.mat'));
-    disp('Loading IDTs features for training set in KTH done.');
+if exist(sprintf([matPath 'kth_train_IDTs.mat']), 'file')
+    load(sprintf([matPath 'kth_train_IDTs.mat']);
+    disp('Loading IDTs features for training set in kth done.');
 
 else            
     kth_train_DirList = dir([basePath, '/idt/train/*.txt']);
@@ -106,7 +106,7 @@ else
             end
         end
     end
-save('kth_train_IDTs.mat', 'kth_train_FeaturesArray', ...
+save([matPath 'kth_train_IDTs.mat'], 'kth_train_FeaturesArray', ...
      'kth_train_FeaturesClassLabelArray',...
      'kth_train_ClassLabels',...
      'kth_train_SeqTotalFeatNum',...
@@ -118,22 +118,27 @@ save('kth_train_IDTs.mat', 'kth_train_FeaturesArray', ...
 disp('Saving train features Done.');
 end
 
+
 %% Generate codebook
 numClusters = 4000;
 numIter = 8;
 numReps = 1;
-sampleInd = 0;  % Whether to sample data points or use all datapoints
+sampleInd = 1;  % Whether to sample data points or use all datapoints
 
 % If clusters already precomputed, just load
 if exist(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
         sampleInd,numClusters,numIter,numReps), 'file')
     load(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
         sampleInd,numClusters,numIter,numReps));
+elseif exist(sprintf('kth-tmp-stip-codebook.mat'), 'file')
+        load(sprintf('kth-tmp-stip-codebook.mat'));
+
 else
     disp('Clustering (maybe long time to be consumed) ...');
     kth_train_FeaturesClassLabelArray(kth_train_FeaturesClassLabelArray==0)=1;
 
     if sampleInd == 1
+        % Multiplicative lagged Fibonacci generator
         s = RandStream('mlfg6331_64');
         numFeaturePointsPerClass = zeros(length(actions),1);
         
@@ -142,6 +147,7 @@ else
                 (kth_train_FeaturesClassLabelArray==cat));
         end
                 
+        % Randomly sample 10% train features
         [randomSampleFeaturesPerClass, index] = datasample(s, kth_train_FeaturesArray, ...
                                 int32(length(kth_train_FeaturesArray)*0.1),...
                                 'Replace',false);
@@ -159,37 +165,61 @@ else
     end
     
     tic;
-    
+
     [kth_centers,kth_membership] = vl_kmeans(kth_train_Features', numClusters, 'verbose',...
                                     'algorithm', 'elkan', 'initialization', 'plusplus',...
                                     'maxnumiterations',numIter, 'numrepetitions', numReps);
     toc;
-    
-   
-    if sampleInd == 1
-        % If a subsampled training was used for clustering, 
-        %find the membership for all the remaining IDTs
-        if any(size(kth_train_Features) ~= size(kth_train_FeaturesArray))
-            % Compute all pair distances with the cluster centers
-            trainToClustersDist = vl_alldist2(kth_train_FeaturesArray', kth_centers);
-            % Sort all the distances in ascending order
-            [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
-
-            kth_membership = sortedInd(:,1);
-        end
-    end
-  
-
-    save(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
-                    sampleInd,numClusters,numIter,numReps), ...
-                    'kth_train_Features', 'kth_train_FeaturesLabels',...
-                    'kth_centers', 'kth_membership', 'numClusters', ...
-                    '-v7.3');
-    disp('Saving codebook done.');
+    % save tmp centers, membership
+    save (sprintf('kth-tmp-stip-codebook.mat'), 'kth_centers', 'kth_membership');
 end
+
+%% find the membership for all the remaining IDTs
+% Skip these codes if you have kth-stip-codbook.mat
+
+if sampleInd == 1
+    % Must check the number of feature array !!
+    % batch size 5047274 / 11 = 458843
+    batch_size = int32(length(kth_train_FeaturesArray) / 11);
+    % batch_array = [1, 458844, 917687, 1376530, 1835373, 2294216, 2753059,...
+      %               3211902, 3670745, 4129588, 4588431, 5047274];
+    batch_array = 1:batch_size:length(kth_train_FeaturesArray); 
+        
+    % pre-allocate
+    kth_final_membership = zeros(1,batch_array(end));
+    
+    for b = 1:length(batch_array)
+        fprintf('Batch Index %d start\n', batch_array(b));
+        tic;
+        if b == 1
+            trainToClustersDist = vl_alldist2(kth_train_FeaturesArray(1, :)', ...
+                                              kth_centers);
+            [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
+            kth_final_membership = sortedInd(:,1)';
+       
+        else
+            trainToClustersDist = vl_alldist2(kth_train_FeaturesArray(...
+                                                batch_array(b-1)+1:batch_array(b), :)', ...
+                                                kth_centers);
+            [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
+            kth_final_membership = [kth_final_membership(1:batch_array(b-1)) ...
+                                       sortedInd(:,1)'];
+        end
+        fprintf('size of membership: (%d, %d)\n\n', size(kth_final_membership));
+        toc;
+   end
+end
+
+save(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
+                sampleInd,numClusters,numIter,numReps), ...
+                'kth_centers', 'kth_final_membership', 'numClusters', ...
+                '-v7.3');
+disp('Saving final codebook done.');
+%end
 
 
 %% Now find the histograms for each of the videos
+% fast to run
 kth_train_VidNum = zeros(length(kth_train_ClassLabels),1);
 for i = 1:length(kth_train_ClassLabels)
    kth_train_VidNum(i) = length(kth_train_ClassLabels{i});
@@ -217,14 +247,15 @@ kth_train_finalRepresentation_nor = (kth_train_finalRepresentation'./ ...
 
 disp('Successfully Building BoVW in kth using training set!')
 
-%% Now for the test data (get BoVW representations for test set)
 
+%% Now for the test data (get BoVW representations for test set)
 % Preload features if already computed
-if exist(sprintf('kth_test_IDTs.mat'), 'file')
-    disp('Loading IDTs features for testing set in KTH ...');
-    load(sprintf('kth_test_IDTs.mat'));
+if exist(sprintf([matPath 'kth_test_IDTs.mat']), 'file')
+    load(sprintf([matPath 'kth_test_IDTs.mat']));
+    disp('Loading IDTs features for testing set in kth ...');
+    
 else
-    % Load IDT HOG-HOF features corresponding to these videos
+    % Load IDT features corresponding to these videos
     %offset = 5;
     kth_test_globalSeqCount = 0; 
 
@@ -312,7 +343,7 @@ else
         end
     end
     
-    save('kth_test_IDTs.mat', ...
+    save([matPath 'kth_test_IDTs.mat'], ...
          'kth_test_FeaturesArray', ...
          'kth_test_FeaturesClassLabelArray',...
          'kth_test_ClassLabels',...
@@ -325,18 +356,41 @@ else
 
 end
 
-% Find memberships for all these points
+%% Find memberships for all these points
 if exist(sprintf('kth-IDT-allBoVWs-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
         sampleInd,numClusters,numIter,numReps), 'file')
     load(sprintf('kth-IDT-allBoVWs-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
         sampleInd,numClusters,numIter,numReps));
 else
-    % Compute all pair distances with the cluster centers
-    kth_testToClustersDist = vl_alldist2(kth_test_FeaturesArray', kth_centers);
-    % Sort all the distances in ascending order
-    [kth_testToClustersDist, sortedInd] = sort(kth_testToClustersDist,2);
+    % check total number of test feature array    
+    % batch size (1658235-1) / 314 =5281
 
-    kth_test_FeaturesMembership = sortedInd(:,1);
+    batch_size_test = int32(length(kth_test_FeaturesArray) / 314);
+    batch_array_test = 1:batch_size_test:length(kth_test_FeaturesArray); 
+
+    % pre-allocate
+    kth_test_membership = zeros(1,batch_array_test(end));
+
+    for b = 1:length(batch_array_test)
+        fprintf('Batch Index %d start\n', batch_array_test(b));
+        tic;
+        if b == 1
+            testToClustersDist = vl_alldist2(kth_test_FeaturesArray(1, :)', ...
+                                              kth_centers);
+            [testToClustersDist, test_sortedInd] = sort(testToClustersDist,2);
+            kth_test_membership = test_sortedInd(:,1)';
+
+        else
+            testToClustersDist = vl_alldist2(kth_test_FeaturesArray(...
+                                                batch_array_test(b-1)+1:batch_array_test(b), :)', ...
+                                                kth_centers);
+            [testToClustersDist, test_sortedInd] = sort(testToClustersDist,2);
+            kth_test_membership = [kth_test_membership(1:batch_array_test(b-1)) ...
+                                       test_sortedInd(:,1)'];
+        end
+        fprintf('size of test membership: (%d, %d)\n\n', size(kth_test_membership));
+        toc;
+    end
 
     % Now find the histograms for each of the test videos
     % Now find the histograms for each of the videos
@@ -378,11 +432,9 @@ else
 end
 
 %% Final Feature mat 
-
-if exist(sprintf('kth-IDT-allFeatures-%d-numclust.mat', ...
-                    numClusters), 'file')
-    disp('Loading kth-IDT-allfeatures.mat file ...');
+if exist(sprintf('kth-IDT-allFeatures-%d-numclust.mat',numClusters), 'file')
     load(sprintf('kth-IDT-allFeatures-%d-numclust.mat', numClusters));
+    disp('Loading kth-IDT-allfeatures.mat file done');
 else
     
     kth.train.features = kth_train_finalRepresentation;
@@ -403,5 +455,5 @@ else
                     'kth');  
     disp('Save all features, labels and parameters for train and test in kth')
 end
-
 disp('Everything is done !')
+

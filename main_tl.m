@@ -15,7 +15,9 @@ numClusters = 4000;
 % Be careful to change it when using different datasets
 % weizmann, kth, hmdb51, ucf101
 
-source_string = 'ucf101';
+% Change line 20, 21, 43, 44, 218
+
+source_string = 'kth';
 target_string = 'hmdb51';
 
 % or 'IDT'
@@ -38,7 +40,7 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = ucf101;
+source = kth;
 target = hmdb51;
 %% Resampling
 
@@ -215,7 +217,7 @@ for step=1:floor(count_perCat*stepSize):count_perCat
     % change when having more or less common category
     target_index = [idx{1}(1:step,step_count);
                     idx{2}(1:step,step_count);
-                    idx{3}(1:step,step_count)
+                    idx{3}(1:step,step_count);
                     idx{4}(1:step,step_count)];
     
     % Non-transfer
