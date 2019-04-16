@@ -11,7 +11,7 @@ actions = {'Biking', 'Clapping', 'Diving', 'GolfSwing', 'Jumping', ...
 addpath('IDT_BOVW');
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/hmdb51';
-matPath = '/Volumes/Kellan/datasets/experimentTL';
+matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL';
 addpath(matPath);
 
 % Load all IDT HOG-HOF features corresponding to these videos

@@ -10,7 +10,7 @@ actions = {'Boxing', 'Clapping', 'Running', 'Walking', 'Waving'};
 addpath('IDT_BOVW');
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/kth';
-matPath = '/Volumes/Kellan/datasets/experimentTL';
+matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL';
 addpath(matPath);
 
 % Load all IDT HOG-HOF features corresponding to these videos
@@ -19,7 +19,7 @@ kth_train_globalSeqCount = 0;
 
 % Preload features if already computed
 if exist(sprintf([matPath 'kth_train_IDTs.mat']), 'file')
-    load(sprintf([matPath 'kth_train_IDTs.mat']);
+    load(sprintf([matPath 'kth_train_IDTs.mat']));
     disp('Loading IDTs features for training set in kth done.');
 
 else            

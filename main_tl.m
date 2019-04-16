@@ -17,7 +17,7 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'kth';
+source_string = 'ucf101';
 target_string = 'hmdb51';
 
 % or 'IDT'
@@ -40,7 +40,7 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = kth;
+source = ucf101;
 target = hmdb51;
 %% Resampling
 
@@ -218,7 +218,10 @@ for step=1:floor(count_perCat*stepSize):count_perCat
     target_index = [idx{1}(1:step,step_count);
                     idx{2}(1:step,step_count);
                     idx{3}(1:step,step_count);
-                    idx{4}(1:step,step_count)];
+                    idx{4}(1:step,step_count);
+                    idx{5}(1:step,step_count);
+                    idx{6}(1:step,step_count);
+                    idx{7}(1:step,step_count)];
     
     % Non-transfer
     source.non_svm{step_count} = svm.train(target.ReSample.train.features(target_index,:), ...
@@ -277,12 +280,6 @@ fprintf('End Drawing.\n');
 save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d%%.mat'],stepSize*100), ...
             'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
             'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm');
-
-
-
-
-
-
 
 
 %% OLD Experiments
