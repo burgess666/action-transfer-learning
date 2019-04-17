@@ -20,7 +20,7 @@ hmdb51_train_globalSeqCount = 0;
 
 % Preload features if already computed
 if exist(sprintf([matPath 'hmdb51_train_IDTs.mat']), 'file')
-    load(sprintf([matPath 'hmdb51_train_IDTs.mat']);
+    load(sprintf([matPath 'hmdb51_train_IDTs.mat']));
     disp('Loading IDTs features for training set in hmdb51 done.');
 
 else            
@@ -66,49 +66,93 @@ else
     % Find total number of features
     disp(['Total number of IDT features = ', int2str(hmdb51_train_globalSeqCount)]);
     % For trajectory(30) + HOG(96) + HOF(108) + MBH(96+96)
-    hmdb51_train_FeaturesArray = zeros(hmdb51_train_globalSeqCount, 30+96+108+96+96);    
-    hmdb51_train_FeaturesClassLabelArray = zeros(hmdb51_train_globalSeqCount,1);
-
-    for i = 1:length(hmdb51_train_ClassLabels)
+    % 7388073 * 426 is larger than memory
+    % Divide train feature array into 2 sub-arrays
+    
+    sub_count1 = 0;
+    for i=1:length(hmdb51_train_ClassLabels)/2
+        len = length(hmdb51_train_SeqTotalFeatCumSum{i});
+        sub_count1 = sub_count1 + len;
+    end
+    sub_count2 = hmdb51_train_globalSeqCount - sub_count1;
+    
+    hmdb51_train_FeaturesArray1 = zeros(sub_count1, 30+96+108+96+96);    
+    hmdb51_train_FeaturesClassLabelArray1 = zeros(sub_count1,1);
+    hmdb51_train_FeaturesArray2 = zeros(sub_count2-1, 30+96+108+96+96);    
+    hmdb51_train_FeaturesClassLabelArray2 = zeros(sub_count2-1,1);
+    
+    disp('Starting First feature array from 1 to 3121025');
+    % First feature array from 1 to 3121025
+    for i = 1:length(hmdb51_train_ClassLabels)/2
         [r,c]= size(hmdb51_train_IDTFeaturesArray{i});
         if i == 1
            for j = 1:r
                if j == 1
-                   hmdb51_train_FeaturesArray(1:hmdb51_train_SeqTotalFeatCumSum{1}(1),:) = ...
+                   hmdb51_train_FeaturesArray1(1:hmdb51_train_SeqTotalFeatCumSum{1}(1),:) = ...
                        hmdb51_train_IDTFeaturesArray{1}(1,1:c);
-                   hmdb51_train_FeaturesClassLabelArray(1:hmdb51_train_SeqTotalFeatCumSum{1}(1)) = ...
+                   hmdb51_train_FeaturesClassLabelArray1(1:hmdb51_train_SeqTotalFeatCumSum{1}(1)) = ...
                        repmat(hmdb51_train_ClassLabels{1},hmdb51_train_SeqTotalFeatNum{1}(1),1);
                else
-                   hmdb51_train_FeaturesArray(hmdb51_train_SeqTotalFeatCumSum{1}(j-1)+1:hmdb51_train_SeqTotalFeatCumSum{1}(j),:) = ...
+                   hmdb51_train_FeaturesArray1(hmdb51_train_SeqTotalFeatCumSum{1}(j-1)+1:hmdb51_train_SeqTotalFeatCumSum{1}(j),:) = ...
                        hmdb51_train_IDTFeaturesArray{1}(j,1:c);
-                   hmdb51_train_FeaturesClassLabelArray(hmdb51_train_SeqTotalFeatCumSum{1}(j-1)+1:hmdb51_train_SeqTotalFeatCumSum{1}(j)) = ...
+                   hmdb51_train_FeaturesClassLabelArray1(hmdb51_train_SeqTotalFeatCumSum{1}(j-1)+1:hmdb51_train_SeqTotalFeatCumSum{1}(j)) = ...
                        repmat(hmdb51_train_ClassLabels{1},hmdb51_train_SeqTotalFeatNum{1}(j),1);
                end
            end
         else
             for j = 1:r
                 if j == 1
-                    hmdb51_train_FeaturesArray(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
+                    hmdb51_train_FeaturesArray1(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
                         hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(1),:) = ...
                         hmdb51_train_IDTFeaturesArray{i}(1,1:c);
-                    hmdb51_train_FeaturesClassLabelArray(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
+                    hmdb51_train_FeaturesClassLabelArray1(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
                         hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(1)) = ...
                         repmat(hmdb51_train_ClassLabels{i},hmdb51_train_SeqTotalFeatNum{i}(1),1);
                 else
-                    hmdb51_train_FeaturesArray( ...
+                    hmdb51_train_FeaturesArray1( ...
                         hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j-1)+1:...
                         hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j),:) = ...
                         hmdb51_train_IDTFeaturesArray{i}(j,1:c);
-                    hmdb51_train_FeaturesClassLabelArray(...
-                hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j-1)+1:...
+                    hmdb51_train_FeaturesClassLabelArray1(...
+                        hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j-1)+1:...
                         hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j)) = ...
                         repmat(hmdb51_train_ClassLabels{i},hmdb51_train_SeqTotalFeatNum{i}(j),1);
                 end
             end
         end
     end
-save([matPath 'hmdb51_train_IDTs.mat'], 'hmdb51_train_FeaturesArray', ...
-     'hmdb51_train_FeaturesClassLabelArray',...
+    
+    disp('Starting Second array from 3121026 to 7388073');
+    % Second array from 3121026 to 7388073
+    for i = length(hmdb51_train_ClassLabels)/2+1:length(hmdb51_train_ClassLabels)
+        [r,c]= size(hmdb51_train_IDTFeaturesArray{i});
+        for j = 1:r
+            if j == 1
+                hmdb51_train_FeaturesArray2(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(1),:) = ...
+                    hmdb51_train_IDTFeaturesArray{i}(1,1:c);
+                hmdb51_train_FeaturesClassLabelArray2(hmdb51_train_overallTotalFeatCumSum(i-1)+1:...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(1)) = ...
+                    repmat(hmdb51_train_ClassLabels{i},hmdb51_train_SeqTotalFeatNum{i}(1),1);
+            else
+                hmdb51_train_FeaturesArray2( ...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j-1)+1:...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j),:) = ...
+                    hmdb51_train_IDTFeaturesArray{i}(j,1:c);
+                hmdb51_train_FeaturesClassLabelArray2(...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j-1)+1:...
+                    hmdb51_train_overallTotalFeatCumSum(i-1)+hmdb51_train_SeqTotalFeatCumSum{i}(j)) = ...
+                    repmat(hmdb51_train_ClassLabels{i},hmdb51_train_SeqTotalFeatNum{i}(j),1);
+            end
+        end
+    end
+
+    
+save([matPath 'hmdb51_train_IDTs.mat'], ...
+     'hmdb51_train_FeaturesArray1', ...
+     'hmdb51_train_FeaturesArray2', ...
+     'hmdb51_train_FeaturesClassLabelArray1',...
+     'hmdb51_train_FeaturesClassLabelArray2',...
      'hmdb51_train_ClassLabels',...
      'hmdb51_train_SeqTotalFeatNum',...
      'hmdb51_train_SeqTotalFeatCumSum',...
@@ -118,7 +162,6 @@ save([matPath 'hmdb51_train_IDTs.mat'], 'hmdb51_train_FeaturesArray', ...
  
 disp('Saving train features Done.');
 end
-
 
 %% Generate codebook
 numClusters = 4000;
@@ -136,7 +179,7 @@ elseif exist(sprintf('hmdb51-tmp-stip-codebook.mat'), 'file')
 
 else
     disp('Clustering (maybe long time to be consumed) ...');
-    hmdb51_train_FeaturesClassLabelArray(hmdb51_train_FeaturesClassLabelArray==0)=1;
+    hmdb51_train_FeaturesClassLabelArray1(hmdb51_train_FeaturesClassLabelArray1==0)=1;
 
     if sampleInd == 1
         % Multiplicative lagged Fibonacci generator
@@ -144,15 +187,15 @@ else
         numFeaturePointsPerClass = zeros(length(actions),1);
         
         for cat = 1:length(actions)
-            numFeaturePointsPerClass(cat) = length(hmdb51_train_FeaturesArray ...
-                (hmdb51_train_FeaturesClassLabelArray==cat));
+            numFeaturePointsPerClass(cat) = length(hmdb51_train_FeaturesArray1 ...
+                (hmdb51_train_FeaturesClassLabelArray1==cat));
         end
                 
         % Randomly sample 10% train features
-        [randomSampleFeaturesPerClass, index] = datasample(s, hmdb51_train_FeaturesArray, ...
-                                int32(length(hmdb51_train_FeaturesArray)*0.1),...
+        [randomSampleFeaturesPerClass, index] = datasample(s, hmdb51_train_FeaturesArray1, ...
+                                int32(length(hmdb51_train_FeaturesArray1)*0.1),...
                                 'Replace',false);
-        randomSampleLabelsPerClass = hmdb51_train_FeaturesClassLabelArray(index);
+        randomSampleLabelsPerClass = hmdb51_train_FeaturesClassLabelArray1(index);
 
         hmdb51_train_Features = randomSampleFeaturesPerClass;
         hmdb51_train_FeaturesLabels = randomSampleLabelsPerClass;
@@ -161,8 +204,8 @@ else
     else
         % Cluster all the training features into clusters
         % If you want to cluster all the features
-        hmdb51_train_Features = hmdb51_train_FeaturesArray;
-        hmdb51_train_FeaturesLabels = hmdb51_train_FeaturesClassLabelArray;
+        hmdb51_train_Features = hmdb51_train_FeaturesArray1;
+        hmdb51_train_FeaturesLabels = hmdb51_train_FeaturesClassLabelArray1;
     end
     
     tic;
@@ -181,10 +224,10 @@ end
 if sampleInd == 1
     % Must check the number of feature array !!
     % batch size 5047274 / 11 = 458843
-    batch_size = int32(length(hmdb51_train_FeaturesArray) / 11);
+    batch_size = int32(length(hmdb51_train_FeaturesArray1) / 11);
     % batch_array = [1, 458844, 917687, 1376530, 1835373, 2294216, 2753059,...
       %               3211902, 3670745, 4129588, 4588431, 5047274];
-    batch_array = 1:batch_size:length(hmdb51_train_FeaturesArray); 
+    batch_array = 1:batch_size:length(hmdb51_train_FeaturesArray1); 
         
     % pre-allocate
     hmdb51_final_membership = zeros(1,batch_array(end));
@@ -193,13 +236,13 @@ if sampleInd == 1
         fprintf('Batch Index %d start\n', batch_array(b));
         tic;
         if b == 1
-            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray(1, :)', ...
+            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray1(1, :)', ...
                                               hmdb51_centers);
             [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
             hmdb51_final_membership = sortedInd(:,1)';
        
         else
-            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray(...
+            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray1(...
                                                 batch_array(b-1)+1:batch_array(b), :)', ...
                                                 hmdb51_centers);
             [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);

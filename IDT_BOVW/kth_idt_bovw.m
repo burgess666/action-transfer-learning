@@ -8,9 +8,10 @@
 
 actions = {'Boxing', 'Clapping', 'Running', 'Walking', 'Waving'};
 addpath('IDT_BOVW');
+addpath('utils')
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/kth';
-matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL';
+matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL/';
 addpath(matPath);
 
 % Load all IDT HOG-HOF features corresponding to these videos
@@ -130,8 +131,8 @@ if exist(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-n
         sampleInd,numClusters,numIter,numReps), 'file')
     load(sprintf('kth-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
         sampleInd,numClusters,numIter,numReps));
-elseif exist(sprintf('kth-tmp-stip-codebook.mat'), 'file')
-        load(sprintf('kth-tmp-stip-codebook.mat'));
+elseif exist(sprintf('kth-tmp-idt-codebook.mat'), 'file')
+        load(sprintf('kth-tmp-idt-codebook.mat'));
 
 else
     disp('Clustering (maybe long time to be consumed) ...');
@@ -171,7 +172,7 @@ else
                                     'maxnumiterations',numIter, 'numrepetitions', numReps);
     toc;
     % save tmp centers, membership
-    save (sprintf('kth-tmp-stip-codebook.mat'), 'kth_centers', 'kth_membership');
+    save (sprintf('kth-tmp-idt-codebook.mat'), 'kth_centers', 'kth_membership');
 end
 
 %% find the membership for all the remaining IDTs
@@ -179,8 +180,9 @@ end
 
 if sampleInd == 1
     % Must check the number of feature array !!
-    % batch size 5047274 / 11 = 458843
-    batch_size = int32(length(kth_train_FeaturesArray) / 11);
+    % batch size (5047274-1) / 11 = 458843
+    % batch size (2480974-1) / 75181 = 33
+    batch_size = (length(kth_train_FeaturesArray)-1) / 75181;
     % batch_array = [1, 458844, 917687, 1376530, 1835373, 2294216, 2753059,...
       %               3211902, 3670745, 4129588, 4588431, 5047274];
     batch_array = 1:batch_size:length(kth_train_FeaturesArray); 
@@ -231,11 +233,11 @@ kth_train_Labels = zeros(kth_train_totalSeq,1);
 
 for i = 1:length(kth_train_ClassLabels)
     if i == 1
-        kth_train_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,kth_membership(...
+        kth_train_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,kth_final_membership(...
                    1:length(kth_train_SeqTotalFeatCumSum{1})));
         kth_train_Labels(i) = kth_train_ClassLabels{i};
     else
-        kth_train_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,kth_membership(...
+        kth_train_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,kth_final_membership(...
             kth_train_overallTotalFeatCumSum(i-1)+1 : kth_train_overallTotalFeatCumSum(i)));
         kth_train_Labels(i) = kth_train_ClassLabels{i};
     end
@@ -363,10 +365,10 @@ if exist(sprintf('kth-IDT-allBoVWs-sampled-%d-numclust-%d-numIter-%d-numReps-%d.
         sampleInd,numClusters,numIter,numReps));
 else
     % check total number of test feature array    
-    % batch size (1658235-1) / 314 =5281
+    % batch size (1088394-1) / 314 =5281
 
-    batch_size_test = int32(length(kth_test_FeaturesArray) / 314);
-    batch_array_test = 1:batch_size_test:length(kth_test_FeaturesArray); 
+    %batch_size_test = int32(length(kth_test_FeaturesArray) / 314);
+    batch_array_test = 1:length(kth_test_FeaturesArray); 
 
     % pre-allocate
     kth_test_membership = zeros(1,batch_array_test(end));
@@ -392,7 +394,7 @@ else
         toc;
     end
 
-    % Now find the histograms for each of the test videos
+    %% Now find the histograms for each of the test videos
     % Now find the histograms for each of the videos
     kth_test_allVidNum = zeros(length(kth_test_ClassLabels),1);
     for i = 1:length(kth_test_ClassLabels)
@@ -406,11 +408,11 @@ else
 
     for i = 1:length(kth_test_ClassLabels)
         if i == 1
-            kth_test_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,kth_test_FeaturesMembership(...
+            kth_test_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,kth_test_membership(...
                        1:length(kth_test_SeqTotalFeatCumSum{1})));
             kth_test_Labels(i) = kth_test_ClassLabels{i};
         else
-            kth_test_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,kth_test_FeaturesMembership(...
+            kth_test_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,kth_test_membership(...
                 kth_test_overallTotalFeatCumSum(i-1)+1 : kth_test_overallTotalFeatCumSum(i)));
             kth_test_Labels(i) = kth_test_ClassLabels{i};
         end

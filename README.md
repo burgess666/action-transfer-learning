@@ -1,1 +1,2 @@
-# action-transfer-learning
+# Human Action Recognition using Transfer Learning
+
