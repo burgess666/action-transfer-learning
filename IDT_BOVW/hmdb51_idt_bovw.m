@@ -41,10 +41,10 @@ else
        % Create feature cell array
        hmdb51_train_idtFeaturesArray = cell(length(hmdb51_train_IDTDescriptor),1);
        %classLabels = zeros(length(IDTDescriptor),1);
-       hmdb51_test_seqFeatNum = zeros(length(hmdb51_train_IDTDescriptor),1);
+       hmdb51_train_seqFeatNum = zeros(length(hmdb51_train_IDTDescriptor),1);
        for i = 1:length(hmdb51_train_IDTDescriptor)
            hmdb51_train_idtFeaturesArray{i} = hmdb51_train_IDTDescriptor(1,:);
-           hmdb51_test_seqFeatNum(i) = size(hmdb51_train_idtFeaturesArray{i},1);
+           hmdb51_train_seqFeatNum(i) = size(hmdb51_train_idtFeaturesArray{i},1);
            hmdb51_train_globalSeqCount = hmdb51_train_globalSeqCount + size(hmdb51_train_idtFeaturesArray{i},1);
        end
        hmdb51_train_IDTFeaturesArray{fn} = hmdb51_train_IDTDescriptor; 
@@ -56,8 +56,8 @@ else
        % For UCF-style idt filenames
        %hmdb51_allClassLabels{fn} = find(contains(actions, IDTFilename(3:end-12)));
        
-       hmdb51_train_SeqTotalFeatNum{fn} = hmdb51_test_seqFeatNum;
-       hmdb51_train_SeqTotalFeatCumSum{fn} = cumsum(hmdb51_test_seqFeatNum);
+       hmdb51_train_SeqTotalFeatNum{fn} = hmdb51_train_seqFeatNum;
+       hmdb51_train_SeqTotalFeatCumSum{fn} = cumsum(hmdb51_train_seqFeatNum);
        hmdb51_train_overallTotalFeatNum(fn) = hmdb51_train_SeqTotalFeatCumSum{fn}(end);
     end
     hmdb51_train_overallTotalFeatCumSum = cumsum(hmdb51_train_overallTotalFeatNum);
@@ -74,12 +74,12 @@ else
         len = length(hmdb51_train_SeqTotalFeatCumSum{i});
         sub_count1 = sub_count1 + len;
     end
-    sub_count2 = hmdb51_train_globalSeqCount - sub_count1;
+    sub_count2 = hmdb51_train_globalSeqCount - sub_count1 -1 ;
     
     hmdb51_train_FeaturesArray1 = zeros(sub_count1, 30+96+108+96+96);    
     hmdb51_train_FeaturesClassLabelArray1 = zeros(sub_count1,1);
-    hmdb51_train_FeaturesArray2 = zeros(sub_count2-1, 30+96+108+96+96);    
-    hmdb51_train_FeaturesClassLabelArray2 = zeros(sub_count2-1,1);
+    hmdb51_train_FeaturesArray2 = zeros(sub_count2, 30+96+108+96+96);    
+    hmdb51_train_FeaturesClassLabelArray2 = zeros(sub_count2,1);
     
     disp('Starting First feature array from 1 to 3121025');
     % First feature array from 1 to 3121025
