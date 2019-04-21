@@ -12,7 +12,7 @@ addpath('IDT_BOVW');
 addpath('utils');
 % Set basic paths:
 basePath= '/Volumes/Kellan/datasets/experimentTL/hmdb51';
-matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL';
+matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL/';
 addpath(matPath);
 
 
@@ -25,7 +25,11 @@ if exist(sprintf([matPath 'hmdb51_train_IDTs.mat']), 'file')
     load(sprintf([matPath 'hmdb51_train_IDTs.mat']));
     disp('Loading IDTs features for training set in hmdb51 done.');
 
-else            
+elseif exist(sprintf([matPath 'hmdb51_train_IDTs_read.mat']), 'file')
+    load(sprintf([matPath 'hmdb51_train_IDTs_read.mat']));
+    disp('Loading idt_read.mat done.');
+    
+else
     hmdb51_train_DirList = dir([basePath, '/idt/train/*.txt']);
     hmdb51_train_IDTFeaturesArray = cell(length(hmdb51_train_DirList),1);
     hmdb51_train_ClassLabels = cell(length(hmdb51_train_DirList),1);
@@ -63,8 +67,19 @@ else
        hmdb51_train_overallTotalFeatNum(fn) = hmdb51_train_SeqTotalFeatCumSum{fn}(end);
     end
     hmdb51_train_overallTotalFeatCumSum = cumsum(hmdb51_train_overallTotalFeatNum);
+    % save
+    save([matPath 'hmdb51_train_IDTs_read.mat'], ...
+         'hmdb51_train_ClassLabels',...
+         'hmdb51_train_IDTFeaturesArray',...
+         'hmdb51_train_SeqTotalFeatNum',...
+         'hmdb51_train_SeqTotalFeatCumSum',...
+         'hmdb51_train_overallTotalFeatNum',...
+         'hmdb51_train_overallTotalFeatCumSum', ...
+         '-v7.3');
+%end
 
-    % Now accumulate all the features and quantize
+   % Now accumulate all the features and quantize
+    % Starting First feature array from 1 to 3121025
     % Find total number of features
     disp(['Total number of IDT features = ', int2str(hmdb51_train_globalSeqCount)]);
     % For trajectory(30) + HOG(96) + HOF(108) + MBH(96+96)
@@ -123,10 +138,12 @@ else
             end
         end
     end
+    disp('Completed First feature array from 1 to 3121025');
     
+    % Starting Second array from 3121026 to 7388073
     disp('Starting Second array from 3121026 to 7388073');
     % Second array from 3121026 to 7388073
-    for i = length(hmdb51_train_ClassLabels)/2+1:length(hmdb51_train_ClassLabels)
+    for i = (length(hmdb51_train_ClassLabels)/2)+1 : length(hmdb51_train_ClassLabels)
         [r,c]= size(hmdb51_train_IDTFeaturesArray{i});
         for j = 1:r
             if j == 1
@@ -148,21 +165,22 @@ else
             end
         end
     end
+    disp('Completed Second array from 3121026 to 7388073');
 
-    
-save([matPath 'hmdb51_train_IDTs.mat'], ...
-     'hmdb51_train_FeaturesArray1', ...
-     'hmdb51_train_FeaturesArray2', ...
-     'hmdb51_train_FeaturesClassLabelArray1',...
-     'hmdb51_train_FeaturesClassLabelArray2',...
-     'hmdb51_train_ClassLabels',...
-     'hmdb51_train_SeqTotalFeatNum',...
-     'hmdb51_train_SeqTotalFeatCumSum',...
-     'hmdb51_train_overallTotalFeatNum',...
-     'hmdb51_train_overallTotalFeatCumSum', ...
-     '-v7.3');
- 
-disp('Saving train features Done.');
+    % save    
+    save([matPath 'hmdb51_train_IDTs.mat'], ...
+         'hmdb51_train_FeaturesArray1', ...
+         'hmdb51_train_FeaturesArray2', ...
+         'hmdb51_train_FeaturesClassLabelArray1',...
+         'hmdb51_train_FeaturesClassLabelArray2',...
+         'hmdb51_train_ClassLabels',...
+         'hmdb51_train_SeqTotalFeatNum',...
+         'hmdb51_train_SeqTotalFeatCumSum',...
+         'hmdb51_train_overallTotalFeatNum',...
+         'hmdb51_train_overallTotalFeatCumSum', ...
+         '-v7.3');
+
+    disp('Saving train features Done.');
 end
 
 %% Generate codebook
