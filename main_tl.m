@@ -17,11 +17,11 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'ucf101';
-target_string = 'hmdb51';
+source_string = 'weizmann';
+target_string = 'kth';
 
 % or 'IDT'
-feature = 'STIP'; 
+feature = 'IDT'; 
 
 if (exist(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters)))
     load(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters));
@@ -40,8 +40,8 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = ucf101;
-target = hmdb51;
+source = weizmann;
+target = kth;
 %% Resampling
 
 % Change the x_actions when using different datasets
@@ -217,11 +217,8 @@ for step=1:floor(count_perCat*stepSize):count_perCat
     % change when having more or less common category
     target_index = [idx{1}(1:step,step_count);
                     idx{2}(1:step,step_count);
-                    idx{3}(1:step,step_count);
-                    idx{4}(1:step,step_count);
-                    idx{5}(1:step,step_count);
-                    idx{6}(1:step,step_count);
-                    idx{7}(1:step,step_count)];
+                    idx{3}(1:step,step_count)
+                    ];
     
     % Non-transfer
     source.non_svm{step_count} = svm.train(target.ReSample.train.features(target_index,:), ...
