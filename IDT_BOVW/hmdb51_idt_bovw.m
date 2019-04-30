@@ -279,38 +279,67 @@ end
 
 %% find the membership for all the remaining IDTs
 % Skip these codes if you have hmdb51-stip-codbook.mat
+% feature array 1 has 3121025, feature array 2 has 4267048
 
 if sampleInd == 1
     % Must check the number of feature array !!
-    % batch size 5047274 / 11 = 458843
-    batch_size = int32(length(hmdb51_train_FeaturesArray1) / 11);
-    % batch_array = [1, 458844, 917687, 1376530, 1835373, 2294216, 2753059,...
-      %               3211902, 3670745, 4129588, 4588431, 5047274];
-    batch_array = 1:batch_size:length(hmdb51_train_FeaturesArray1); 
+    % batch size (3121025-1) / 4736 = 659 
+    batch_size1 = int32(length(hmdb51_train_FeaturesArray1) / 4736);
+    batch_array1 = 1:batch_size1:length(hmdb51_train_FeaturesArray1);
+    
+    % batch size (4267048-1) / 3669  = 1163
+    batch_size2 = int32(length(hmdb51_train_FeaturesArray2) / 3669);
+    batch_array2 = 1:batch_size2:length(hmdb51_train_FeaturesArray2);
         
     % pre-allocate
-    hmdb51_final_membership = zeros(1,batch_array(end));
+    hmdb51_final_membership1 = zeros(1,batch_array1(end));
+    hmdb51_final_membership2 = zeros(1,batch_array2(end));
+
     
-    for b = 1:length(batch_array)
-        fprintf('Batch Index %d start\n', batch_array(b));
+    for b = 1:length(batch_array1)
+        fprintf('Batch Index %d start\n', batch_array1(b));
         tic;
         if b == 1
             trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray1(1, :)', ...
                                               hmdb51_centers);
             [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
-            hmdb51_final_membership = sortedInd(:,1)';
+            hmdb51_final_membership1 = sortedInd(:,1)';
        
         else
             trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray1(...
-                                                batch_array(b-1)+1:batch_array(b), :)', ...
+                                                batch_array1(b-1)+1:batch_array1(b), :)', ...
                                                 hmdb51_centers);
             [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
-            hmdb51_final_membership = [hmdb51_final_membership(1:batch_array(b-1)) ...
+            hmdb51_final_membership1 = [hmdb51_final_membership1(1:batch_array1(b-1)) ...
                                        sortedInd(:,1)'];
         end
-        fprintf('size of membership: (%d, %d)\n\n', size(hmdb51_final_membership));
+        fprintf('size of membership: (%d, %d)\n\n', size(hmdb51_final_membership1));
         toc;
-   end
+        disp('Completed first array.');
+    end
+   
+    for b = 1:length(batch_array2)
+        fprintf('Batch Index %d start\n', batch_array2(b));
+        tic;
+        if b == 1
+            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray2(1, :)', ...
+                                              hmdb51_centers);
+            [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
+            hmdb51_final_membership2 = sortedInd(:,1)';
+       
+        else
+            trainToClustersDist = vl_alldist2(hmdb51_train_FeaturesArray2(...
+                                                batch_array2(b-1)+1:batch_array2(b), :)', ...
+                                                hmdb51_centers);
+            [trainToClustersDist, sortedInd] = sort(trainToClustersDist,2);
+            hmdb51_final_membership2 = [hmdb51_final_membership2(1:batch_array2(b-1)) ...
+                                       sortedInd(:,1)'];
+        end
+        fprintf('size of membership: (%d, %d)\n\n', size(hmdb51_final_membership2));
+        toc;
+        disp('Completed second array.');
+    end
+    hmdb51_final_membership = [hmdb51_final_membership1, hmdb51_final_membership2];
 end
 
 save(sprintf('hmdb51-IDT-codebook-clustered-sampled-%d-numclust-%d-numIter-%d-numReps-%d.mat',...
@@ -334,11 +363,11 @@ hmdb51_train_Labels = zeros(hmdb51_train_totalSeq,1);
 
 for i = 1:length(hmdb51_train_ClassLabels)
     if i == 1
-        hmdb51_train_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,hmdb51_membership(...
+        hmdb51_train_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,hmdb51_final_membership(...
                    1:length(hmdb51_train_SeqTotalFeatCumSum{1})));
         hmdb51_train_Labels(i) = hmdb51_train_ClassLabels{i};
     else
-        hmdb51_train_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,hmdb51_membership(...
+        hmdb51_train_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,hmdb51_final_membership(...
             hmdb51_train_overallTotalFeatCumSum(i-1)+1 : hmdb51_train_overallTotalFeatCumSum(i)));
         hmdb51_train_Labels(i) = hmdb51_train_ClassLabels{i};
     end
@@ -355,7 +384,7 @@ disp('Successfully Building BoVW in hmdb51 using training set!')
 % Preload features if already computed
 if exist(sprintf([matPath 'hmdb51_test_IDTs.mat']), 'file')
     load(sprintf([matPath 'hmdb51_test_IDTs.mat']));
-    disp('Loading IDTs features for testing set in hmdb51 ...');
+    disp('Loading IDTs features for testing set in hmdb51 done.');
 
 else
     % Load IDT features corresponding to these videos
@@ -466,9 +495,9 @@ if exist(sprintf('hmdb51-IDT-allBoVWs-sampled-%d-numclust-%d-numIter-%d-numReps-
         sampleInd,numClusters,numIter,numReps));
 else
     % check total number of test feature array    
-    % batch size (1658235-1) / 314 =5281
+    % batch size (3234021-1) / 8005 =404
 
-    batch_size_test = int32(length(hmdb51_test_FeaturesArray) / 314);
+    batch_size_test = int32((length(hmdb51_test_FeaturesArray)-1) / 8005);
     batch_array_test = 1:batch_size_test:length(hmdb51_test_FeaturesArray); 
 
     % pre-allocate
