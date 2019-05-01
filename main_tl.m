@@ -17,8 +17,8 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'weizmann';
-target_string = 'kth';
+source_string = 'kth';
+target_string = 'hmdb51';
 
 % or 'IDT'
 feature = 'IDT'; 
@@ -40,8 +40,8 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = weizmann;
-target = kth;
+source = kth;
+target = hmdb51;
 %% Resampling
 
 % Change the x_actions when using different datasets
@@ -217,7 +217,8 @@ for step=1:floor(count_perCat*stepSize):count_perCat
     % change when having more or less common category
     target_index = [idx{1}(1:step,step_count);
                     idx{2}(1:step,step_count);
-                    idx{3}(1:step,step_count)
+                    idx{3}(1:step,step_count);
+                    idx{4}(1:step,step_count)
                     ];
     
     % Non-transfer

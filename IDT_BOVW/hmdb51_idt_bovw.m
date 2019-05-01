@@ -538,11 +538,11 @@ else
 
     for i = 1:length(hmdb51_test_ClassLabels)
         if i == 1
-            hmdb51_test_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,hmdb51_test_FeaturesMembership(...
+            hmdb51_test_finalRepresentation(1,:) =  vl_ikmeanshist(numClusters,hmdb51_test_membership(...
                        1:length(hmdb51_test_SeqTotalFeatCumSum{1})));
             hmdb51_test_Labels(i) = hmdb51_test_ClassLabels{i};
         else
-            hmdb51_test_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,hmdb51_test_FeaturesMembership(...
+            hmdb51_test_finalRepresentation(i,:) =  vl_ikmeanshist(numClusters,hmdb51_test_membership(...
                 hmdb51_test_overallTotalFeatCumSum(i-1)+1 : hmdb51_test_overallTotalFeatCumSum(i)));
             hmdb51_test_Labels(i) = hmdb51_test_ClassLabels{i};
         end
