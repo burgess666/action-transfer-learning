@@ -18,7 +18,7 @@ numClusters = 4000;
 % Change line 20, 21, 43, 44, 218
 
 source_string = 'kth';
-target_string = 'hmdb51';
+target_string = 'ucf101';
 
 % or 'IDT'
 feature = 'STIP'; 
@@ -41,7 +41,7 @@ end
 
 % Be careful to change it when using different datasets
 source = kth;
-target = hmdb51;
+target = ucf101;
 %% Resampling
 
 % Change the x_actions when using different datasets
@@ -162,7 +162,7 @@ ws_zero = zeros(numClusters,1);
 C=0.002;
 
 % svm model: train on source, test on source
-source.svm_ss = svm.train(source.ReSample.train.features, ...
+source.svm_ss = svm.train( source.ReSample.train.features, ...
                             source.ReSample.train.labels, ...
                             C, ws_zero, 'A_SVM');
 predict_ss = svm.predict(source.svm_ss, source.ReSample.test.features);
@@ -171,10 +171,16 @@ predict_ss = svm.predict(source.svm_ss, source.ReSample.test.features);
 stat_ss = confusionmatStats(source.ReSample.test.labels, predict_ss);
 
 % l2 normalization
-for m=1:length(source.svm_ss.model)
-    source.svm_ss.model{m}.w = source.svm_ss.model{m}.w / ...
-                                norm(source.svm_ss.model{m}.w(:));  
-end
+if length(common_category) > 2
+    for m=1:length(source.svm_ss.model)
+        source.svm_ss.model{m}.w = source.svm_ss.model{m}.w / ...
+                                    norm(source.svm_ss.model{m}.w(:));  
+    end
+else
+    source.svm_ss.model.w = source.svm_ss.model.w / ...
+                                    norm(source.svm_ss.model.w(:));
+end                         
+    
 % End: Train on source, test on source %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -221,9 +227,7 @@ for step=1:stepSize:min_cat
     step_count = step_count + 1;
     % change when having more or less common category
     target_index = [idx{1}(1:step,step_count);
-                    idx{2}(1:step,step_count);
-                    idx{3}(1:step,step_count);
-                    idx{4}(1:step,step_count)
+                    idx{2}(1:step,step_count)
                     ];
 
     % Non-transfer
@@ -281,7 +285,7 @@ fprintf('End Drawing.\n');
 
 
 %% Save results
-save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d%%.mat'],stepSize*100), ...
+save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d.mat'],stepSize), ...
             'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
             'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm');
 

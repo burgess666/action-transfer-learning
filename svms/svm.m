@@ -41,24 +41,32 @@ classdef svm
                     disp(model{i})
                 end
             else
-                if strcmp(algorithm,'A_SVM')
-                    % svmStruct = ws_zero or source.svm.w
-                    if ~isstruct(svmStruct)
-                        model = A_SVM(classx, features, C, svmStruct);
+                model=cell(1,nsample);
+                for i=1:nsample
+                    classx=labels;
+                    classx(classx==classIndex(i))=sumValue;
+                    classx(classx~=sumValue)=-1;
+                    classx(classx==sumValue)=1;
+                    
+                    if strcmp(algorithm,'A_SVM')
+                        % svmStruct = ws_zero or source.svm.w
+                        if ~isstruct(svmStruct)
+                            model = A_SVM(classx, features, C, svmStruct);
+                        else
+                            model = A_SVM(classx, features, C, svmStruct.model.w);
+                        end
+                    elseif strcmp(algorithm,'PMT_SVM')
+                        if ~isstruct(svmStruct)
+                            model = PMT_SVM(classx, features, C, svmStruct);
+                        else
+                            model = PMT_SVM(classx, features, C, svmStruct.model.w);
+                        end
                     else
-                        model = A_SVM(classx, features, C, svmStruct.model.w);
+                        error (message('stats:train:UnknownAlgorithm'))               
                     end
-                elseif strcmp(algorithm,'PMT_SVM')
-                    if ~isstruct(svmStruct)
-                        model = PMT_SVM(classx, features, C, svmStruct);
-                    else
-                        model = PMT_SVM(classx, features, C, svmStruct.model.w);
-                    end
-                else
-                    error (message('stats:train:UnknownAlgorithm'))               
+                   fprintf('\nx Two class svm  Model--->\n')
+                    disp(model)
                 end
-               fprintf('\nx Two class svm  Model--->\n')
-                disp(model)
             end
             Model.model=model;
             Model.classInstance=classIndex;
