@@ -16,7 +16,7 @@ matPath = '/Volumes/Kellan/MATLAB/ActionRecogTL/';
 addpath(matPath);
 
 
-% Load all IDT HOG-HOF features corresponding to these videos
+% Load all IDT features corresponding to these videos
 % offset = 5;
 hmdb51_train_globalSeqCount = 0; 
 

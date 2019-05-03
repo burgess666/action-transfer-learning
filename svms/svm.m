@@ -64,8 +64,8 @@ classdef svm
                     else
                         error (message('stats:train:UnknownAlgorithm'))               
                     end
-                   fprintf('\nx Two class svm  Model--->\n')
-                    disp(model)
+                   fprintf('\n Two class svm  Model--->\n')
+                   disp(model)
                 end
             end
             Model.model=model;
@@ -92,6 +92,7 @@ classdef svm
                 output=classIndex(index);
             else
                 output=svm.svmclassify(model,sample,varargin{:});
+                output(output==-1)=2;
             end
             fprintf('\n SVM Classification is completed\n')
         end

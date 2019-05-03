@@ -17,11 +17,12 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'kth';
+source_string = 'weizmann';
 target_string = 'ucf101';
 
-% or 'IDT'
+% 'IDT' or 'STIP'
 feature = 'STIP'; 
+%feature = 'IDT'; 
 
 if (exist(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters)))
     load(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters));
@@ -40,7 +41,7 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = kth;
+source = weizmann;
 target = ucf101;
 %% Resampling
 
@@ -167,7 +168,6 @@ source.svm_ss = svm.train( source.ReSample.train.features, ...
                             C, ws_zero, 'A_SVM');
 predict_ss = svm.predict(source.svm_ss, source.ReSample.test.features);
                      
-%cm = confusionmat(test_labels, predict);
 stat_ss = confusionmatStats(source.ReSample.test.labels, predict_ss);
 
 % l2 normalization
@@ -211,7 +211,7 @@ min_cat = min(cell2mat(count_perCat));
 
 for i=1:length(common_category)
     step_count = 0;
-    for step=1:stepSize:min_cat
+    for step=5:stepSize:min_cat
         % step can start from ceil(count_perCat*stepSize)
         index{i} = index{i}(randperm(count_perCat{i}));
         step_count = step_count + 1;
@@ -220,7 +220,8 @@ for i=1:length(common_category)
 end
 
 step_count = 0;
-for step=1:stepSize:min_cat
+% start from 5 samples
+for step=5:stepSize:min_cat
     % step can start from ceil(count_perCat*stepSize)
     fprintf('\t %d sample(s)\n',step);
     pause(0.01);
@@ -230,26 +231,26 @@ for step=1:stepSize:min_cat
                     idx{2}(1:step,step_count)
                     ];
 
-    % Non-transfer
+    % Non-transfer (re-train target training data along with source training data, and test on target testing data )
     source.non_svm{step_count} = svm.train([source.ReSample.train.features; target.ReSample.train.features(target_index,:)], ...
-                                            [source.ReSample.train.labels;target.ReSample.train.labels(target_index)], ...
+                                            [source.ReSample.train.labels; target.ReSample.train.labels(target_index)], ...
                                             C, ws_zero, 'A_SVM');
-    predict_nonsvm = svm.predict(source.non_svm{step_count}, target.ReSample.test.features);
-    stat_non_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_nonsvm);
+    predict_nonsvm{step_count} = svm.predict(source.non_svm{step_count}, target.ReSample.test.features);
+    stat_non_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_nonsvm{step_count});
 
     % A_SVM            
     source.a_svm{step_count} = svm.train(target.ReSample.train.features(target_index,:), ...
                                             target.ReSample.train.labels(target_index), ...
                                             C, source.svm_ss, 'A_SVM');
-    predict_asvm = svm.predict(source.a_svm{step_count}, target.ReSample.test.features);
-    stat_a_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_asvm);
+    predict_asvm{step_count} = svm.predict(source.a_svm{step_count}, target.ReSample.test.features);
+    stat_a_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_asvm{step_count});
 
     % PMT_SVM            
     source.pmt_svm{step_count} = svm.train(target.ReSample.train.features(target_index,:), ...
                                             target.ReSample.train.labels(target_index), ...
                                             C, source.svm_ss, 'PMT_SVM');
-    predict_pmtsvm = svm.predict(source.pmt_svm{step_count}, target.ReSample.test.features);
-    stat_pmt_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_pmtsvm);
+    predict_pmtsvm{step_count} = svm.predict(source.pmt_svm{step_count}, target.ReSample.test.features);
+    stat_pmt_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_pmtsvm{step_count});
 
 end
 
@@ -272,13 +273,13 @@ end
 %% Draw comparison figure between SVM, A-SVM, PMT-SVM
 fprintf('Drawing the F1 curves.\n');
 drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
-    [1:stepSize:min_cat],{ ...
+    [5:stepSize:min_cat],{ ...
     mean_F1_pmt_svm(:,1),['PMT-SVM']; ...
     mean_F1_a_svm(:,1),['A-SVM']; ...
     mean_F1_non_svm(:,1),['Target SVM (Test on Target)']; ...
-    ones(length(1:stepSize:min_cat),1)*mean_F1_st,...
+    ones(length(5:stepSize:min_cat),1)*mean_F1_st,...
         ['Source SVM (Test on Target)']; ...
-    ones(length(1:stepSize:min_cat),1)*mean_F1_ss,...
+    ones(length(5:stepSize:min_cat),1)*mean_F1_ss,...
         ['Source SVM (Test on Source)']
     });
 fprintf('End Drawing.\n');
@@ -289,7 +290,14 @@ save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-
             'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
             'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm');
 
-
+        
+        
+        
+        
+        
+        
+        
+        
 %% OLD Experiments
 
 % Combine train and test in source (removed)
