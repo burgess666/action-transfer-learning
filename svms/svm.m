@@ -13,6 +13,7 @@ classdef svm
             classIndex=unique(labels);
             sumValue=sum(classIndex);
             nsample=length(classIndex);
+            
             if nsample>2
                 model=cell(1,nsample);
                 for i=1:nsample
@@ -41,32 +42,28 @@ classdef svm
                     disp(model{i})
                 end
             else
-                model=cell(1,nsample);
-                for i=1:nsample
-                    classx=labels;
-                    classx(classx==classIndex(i))=sumValue;
-                    classx(classx~=sumValue)=-1;
-                    classx(classx==sumValue)=1;
-                    
-                    if strcmp(algorithm,'A_SVM')
-                        % svmStruct = ws_zero or source.svm.w
-                        if ~isstruct(svmStruct)
-                            model = A_SVM(classx, features, C, svmStruct);
-                        else
-                            model = A_SVM(classx, features, C, svmStruct.model.w);
-                        end
-                    elseif strcmp(algorithm,'PMT_SVM')
-                        if ~isstruct(svmStruct)
-                            model = PMT_SVM(classx, features, C, svmStruct);
-                        else
-                            model = PMT_SVM(classx, features, C, svmStruct.model.w);
-                        end
+                classx=labels;
+                classx(classx~=1)=-1;
+                classx(classx==1)=1;
+
+                if strcmp(algorithm,'A_SVM')
+                    % svmStruct = ws_zero or source.svm.w
+                    if ~isstruct(svmStruct)
+                        model = A_SVM(classx, features, C, svmStruct);
                     else
-                        error (message('stats:train:UnknownAlgorithm'))               
+                        model = A_SVM(classx, features, C, svmStruct.model.w);
                     end
-                   fprintf('\n Two class svm  Model--->\n')
-                   disp(model)
+                elseif strcmp(algorithm,'PMT_SVM')
+                    if ~isstruct(svmStruct)
+                        model = PMT_SVM(classx, features, C, svmStruct);
+                    else
+                        model = PMT_SVM(classx, features, C, svmStruct.model.w);
+                    end
+                else
+                    error (message('stats:train:UnknownAlgorithm'))               
                 end
+               fprintf('\n Two class svm  Model--->\n')
+               disp(model)
             end
             Model.model=model;
             Model.classInstance=classIndex;
@@ -134,6 +131,7 @@ classdef svm
                 predicted_class = [];
             end
         end
+        
         
         function [predicted_class,score] = svmdecision(test_features,svm_struct)
             

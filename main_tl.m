@@ -18,11 +18,11 @@ numClusters = 4000;
 % Change line 20, 21, 43, 44, 218
 
 source_string = 'weizmann';
-target_string = 'ucf101';
+target_string = 'hmdb51';
 
 % 'IDT' or 'STIP'
-feature = 'STIP'; 
-%feature = 'IDT'; 
+%feature = 'STIP'; 
+feature = 'IDT'; 
 
 if (exist(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters)))
     load(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters));
@@ -42,7 +42,7 @@ end
 
 % Be careful to change it when using different datasets
 source = weizmann;
-target = ucf101;
+target = hmdb51;
 %% Resampling
 
 % Change the x_actions when using different datasets
@@ -228,7 +228,9 @@ for step=5:stepSize:min_cat
     step_count = step_count + 1;
     % change when having more or less common category
     target_index = [idx{1}(1:step,step_count);
-                    idx{2}(1:step,step_count)
+                    idx{2}(1:step,step_count);
+                    idx{3}(1:step,step_count);
+                    idx{4}(1:step,step_count)
                     ];
 
     % Non-transfer (re-train target training data along with source training data, and test on target testing data )
@@ -270,7 +272,7 @@ for i=1:step_count
     mean_F1_pmt_svm(i) =  mean(stat_pmt_svm(i).Fscore);
 end
 
-%% Draw comparison figure between SVM, A-SVM, PMT-SVM
+% Draw comparison figure between SVM, A-SVM, PMT-SVM
 fprintf('Drawing the F1 curves.\n');
 drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
     [5:stepSize:min_cat],{ ...
@@ -284,11 +286,39 @@ drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
     });
 fprintf('End Drawing.\n');
 
+%% Accuracy
+mean_ACC_non_svm = zeros(step_count,1);
+mean_ACC_a_svm = zeros(step_count,1);
+mean_ACC_pmt_svm = zeros(step_count,1);
+mean_ACC_ss = mean(stat_ss.accuracy);
+mean_ACC_st = mean(stat_st.accuracy);
+
+for i=1:step_count
+    mean_ACC_non_svm(i) = mean(stat_non_svm(i).accuracy);
+    mean_ACC_a_svm(i) =  mean(stat_a_svm(i).accuracy);
+    mean_ACC_pmt_svm(i) =  mean(stat_pmt_svm(i).accuracy);
+end
+
+% Draw comparison figure between SVM, A-SVM, PMT-SVM
+fprintf('Drawing the F1 curves.\n');
+drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
+    [5:stepSize:min_cat],{ ...
+    mean_ACC_pmt_svm(:,1),['PMT-SVM']; ...
+    mean_ACC_a_svm(:,1),['A-SVM']; ...
+    mean_ACC_non_svm(:,1),['Target SVM (Test on Target)']; ...
+    ones(length(5:stepSize:min_cat),1)*mean_ACC_st,...
+        ['Source SVM (Test on Target)']; ...
+    ones(length(5:stepSize:min_cat),1)*mean_ACC_ss,...
+        ['Source SVM (Test on Source)']
+    });
+fprintf('End Drawing.\n');
+
 
 %% Save results
 save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d.mat'],stepSize), ...
             'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
-            'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm');
+            'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm',...
+            'step_count', 'stepSize', 'min_cat');
 
         
         
