@@ -3,9 +3,8 @@
 
 % MOSEK optimization toolkit is advised for faster QP optimization which is
 % used in Model Transfer SVM learning procedures.
-
-% 1. Transfer Learning Task: Weizmann (source) --> KTH (target)
-
+for r=1:5
+repeat_str = int2str(r);
 addpath svms
 addpath utils
 addpath STIP_BOVW
@@ -17,8 +16,8 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'weizmann';
-target_string = 'hmdb51';
+source_string = 'hmdb51';
+target_string = 'kth';
 
 % 'IDT' or 'STIP'
 %feature = 'STIP'; 
@@ -41,9 +40,9 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = weizmann;
-target = hmdb51;
-%% Resampling
+source = hmdb51;
+target = kth;
+% Resampling
 
 % Change the x_actions when using different datasets
 common_category = intersect(source.bovw.actions, ...
@@ -157,7 +156,7 @@ for i=1:length(common_category)
 end
 % End: Re-sampling and Re-label
 
-%% Start: Train on source, test on source %
+% Start: Train on source, test on source %
 
 ws_zero = zeros(numClusters,1);
 C=0.002;
@@ -185,7 +184,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Start: Train on source, and directly test on target %
+% Start: Train on source, and directly test on target %
         
 % Directly evaluate on target test part. 
 % (use the same model as above)
@@ -196,10 +195,10 @@ stat_st = confusionmatStats(target.ReSample.test.labels, predict_st);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Start: Train & test target classifier with increasing number of samples
+% Start: Train & test target classifier with increasing number of samples
 
 % Increasing number of examples (5)
-stepSize = 5;
+stepSize = 0.05;
 idx = [];
 count_perCat = [];
 for i=1:length(common_category)
@@ -211,7 +210,7 @@ min_cat = min(cell2mat(count_perCat));
 
 for i=1:length(common_category)
     step_count = 0;
-    for step=5:stepSize:min_cat
+    for step=round(min_cat * [stepSize:stepSize:1])
         % step can start from ceil(count_perCat*stepSize)
         index{i} = index{i}(randperm(count_perCat{i}));
         step_count = step_count + 1;
@@ -221,7 +220,7 @@ end
 
 step_count = 0;
 % start from 5 samples
-for step=5:stepSize:min_cat
+for step=round(min_cat * [stepSize:stepSize:1])
     % step can start from ceil(count_perCat*stepSize)
     fprintf('\t %d sample(s)\n',step);
     pause(0.01);
@@ -259,7 +258,93 @@ end
 % End: Train & test target classifier with increasing number of samples %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% F1 score
+% Recall
+%source_string = 'kth';
+%target_string = 'hmdb51';
+%feature = 'IDT';
+metrics = 'recall';
+mean_recall_non_svm = zeros(step_count,1);
+mean_recall_a_svm = zeros(step_count,1);
+mean_recall_pmt_svm = zeros(step_count,1);
+mean_recall_ss = mean(stat_ss.recall);
+mean_recall_st = mean(stat_st.recall);
+
+for i=1:step_count
+    mean_recall_non_svm(i) = mean(stat_non_svm(i).recall);
+    mean_recall_a_svm(i) =  mean(stat_a_svm(i).recall);
+    mean_recall_pmt_svm(i) =  mean(stat_pmt_svm(i).recall);
+end
+
+% Draw comparison figure between SVM, A-SVM, PMT-SVM
+fprintf('Drawing the Recall curves.\n');
+drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
+    [5:5:50],{ ...
+    mean_recall_pmt_svm(1:10,1),['PMT-SVM']; ...
+    mean_recall_a_svm(1:10,1),['A-SVM']; ...
+    mean_recall_non_svm(1:10,1),['Non-transfer SVM']
+    });
+
+fprintf('End Drawing.\n');
+
+% Save results
+save(sprintf([repeat_str '-5-Results-' source_string '-' target_string '-' feature '-' metrics '-stepsize-%.2f.mat'],stepSize), ...
+            'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
+            'mean_recall_ss', 'mean_recall_st', 'mean_recall_a_svm','mean_recall_non_svm', 'mean_recall_pmt_svm',...
+            'step_count', 'stepSize', 'min_cat', 'source_string', 'target_string');
+clear;
+clc;
+end        
+
+
+%% Conclusion on results
+source_string = 'weizmann';
+target_string = 'kth';
+feature = 'STIP';
+metrics = 'recall';
+stepSize = 0.05;
+results_non_svm = [];
+results_a_svm = [];
+results_pmt_svm = [];
+
+
+for r =1:5
+    repeat_str = int2str(r);
+    if (exist(sprintf([repeat_str '-1-Results-' source_string '-' target_string '-' feature '-' metrics '-stepsize-%.2f.mat'],stepSize)))
+    load(sprintf([repeat_str '-1-Results-' source_string '-' target_string '-' feature '-' metrics '-stepsize-%.2f.mat'],stepSize));
+    end
+    results_non_svm = [results_non_svm;mean_recall_non_svm'];
+    results_a_svm = [results_a_svm;mean_recall_a_svm'];
+    results_pmt_svm = [results_pmt_svm;mean_recall_pmt_svm'];
+    
+end
+
+mean_non_svm = mean(results_non_svm);
+mean_a_svm = mean(results_a_svm);
+mean_pmt_svm = mean(results_pmt_svm);
+
+        
+
+
+%% old codes
+%{
+%% Feature Comparision
+
+source_string = 'weizmann';
+target_string = 'kth';
+        
+drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
+    [5:stip_1_stepSize:stip_1_min_cat],{ ...
+    idt_1_mean_recall_pmt_svm(:,1),['PMT-SVM (IDT)']; ...
+    idt_1_mean_recall_a_svm(:,1),['A-SVM (IDT)']; ...
+    %idt_1_mean_recall_non_svm(:,1),['Non-transfer SVM (IDT)']; ...
+    
+    stip_1_mean_recall_pmt_svm(:,1),['PMT-SVM (STIP)']; ...
+    stip_1_mean_recall_a_svm(:,1),['A-SVM (STIP)']; ...
+    %stip_1_mean_recall_non_svm(:,1),['Non-transfer SVM (STIP)']; ...
+    });
+fprintf('End Drawing.\n'); 
+
+% F1 score
 mean_F1_non_svm = zeros(step_count,1);
 mean_F1_a_svm = zeros(step_count,1);
 mean_F1_pmt_svm = zeros(step_count,1);
@@ -286,7 +371,8 @@ drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
     });
 fprintf('End Drawing.\n');
 
-%% Accuracy
+
+Accuracy
 mean_ACC_non_svm = zeros(step_count,1);
 mean_ACC_a_svm = zeros(step_count,1);
 mean_ACC_pmt_svm = zeros(step_count,1);
@@ -300,7 +386,7 @@ for i=1:step_count
 end
 
 % Draw comparison figure between SVM, A-SVM, PMT-SVM
-fprintf('Drawing the F1 curves.\n');
+fprintf('Drawing the Accuracy curves.\n');
 drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
     [5:stepSize:min_cat],{ ...
     mean_ACC_pmt_svm(:,1),['PMT-SVM']; ...
@@ -314,21 +400,12 @@ drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
 fprintf('End Drawing.\n');
 
 
-%% Save results
-save(sprintf(['Results-' source_string '-' target_string '-' feature '-stepsize-%d.mat'],stepSize), ...
-            'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
-            'mean_F1_ss', 'mean_F1_st', 'mean_F1_a_svm','mean_F1_non_svm', 'mean_F1_pmt_svm',...
-            'step_count', 'stepSize', 'min_cat');
-
         
         
         
         
         
-        
-        
-        
-%% OLD Experiments
+% OLD Experiments
 
 % Combine train and test in source (removed)
 %source_combined = cell2struct(cellfun(@vertcat,struct2cell(source_ucf.train),...
@@ -463,7 +540,7 @@ for cat = 1:length(common_category)
 end
 
 
-%% Draw comparison figure between SVM, A-SVM, PMT-SVM
+% Draw comparison figure between SVM, A-SVM, PMT-SVM
 fprintf('Drawing the AP curves.\n');
 drawComparisonFigure( ['Source: WeizMann' ' Target: KTH'] , ...
     [1:stepSize:pos_count],{ ...
@@ -474,3 +551,4 @@ drawComparisonFigure( ['Source: WeizMann' ' Target: KTH'] , ...
     ones(length(1:stepSize:pos_count),1)*ap_OnSource_CV(2), ['Source SVM (Test on Source)']
     });
 fprintf('End Drawing.\n');
+%}

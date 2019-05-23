@@ -51,8 +51,8 @@ for i=1:size(all,1)
 end
 h = legend(all(:,2),'Location','SouthEast','FontSize', 14);
 
-xlabel('Number of Samples', 'FontSize', 16, 'fontweight','b')
-ylabel('F1 Score', 'FontSize', 16, 'fontweight','b')
+xlabel('Percentage of Target Samples', 'FontSize', 16, 'fontweight','b')
+ylabel('Average Recall', 'FontSize', 16, 'fontweight','b')
 
 set(gca,'XTick',sampling, 'FontSize', 14 ,'fontweight','b') %[1 5 10 15 20]
 set(gca,'YTick',0:0.1:1, 'FontSize', 14 ,'fontweight','b')
