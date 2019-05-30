@@ -4,7 +4,7 @@
 % MOSEK optimization toolkit is advised for faster QP optimization which is
 % used in Model Transfer SVM learning procedures.
 for r=1:5
-repeat_str = int2str(r);
+%repeat_str = int2str(r);
 addpath svms
 addpath utils
 addpath STIP_BOVW
@@ -16,12 +16,12 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'hmdb51';
-target_string = 'kth';
+source_string = 'kth';
+target_string = 'hmdb51';
 
 % 'IDT' or 'STIP'
-%feature = 'STIP'; 
-feature = 'IDT'; 
+feature = 'STIP'; 
+%feature = 'IDT'; 
 
 if (exist(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters)))
     load(sprintf([source_string '-' feature '-allFeatures-%d-numclust.mat'], numClusters));
@@ -40,8 +40,8 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = hmdb51;
-target = kth;
+source = kth;
+target = hmdb51;
 % Resampling
 
 % Change the x_actions when using different datasets
@@ -161,13 +161,14 @@ end
 ws_zero = zeros(numClusters,1);
 C=0.002;
 
-% svm model: train on source, test on source
-source.svm_ss = svm.train( source.ReSample.train.features, ...
-                            source.ReSample.train.labels, ...
+% svm model: train on source
+% use all samples in source
+source.svm_ss = svm.train( [source.ReSample.train.features;source.ReSample.test.features], ...
+                            [source.ReSample.train.labels;source.ReSample.test.labels], ...
                             C, ws_zero, 'A_SVM');
-predict_ss = svm.predict(source.svm_ss, source.ReSample.test.features);
+%predict_ss = svm.predict(source.svm_ss, source.ReSample.test.features);
                      
-stat_ss = confusionmatStats(source.ReSample.test.labels, predict_ss);
+%stat_ss = confusionmatStats(source.ReSample.test.labels, predict_ss);
 
 % l2 normalization
 if length(common_category) > 2
@@ -210,7 +211,7 @@ min_cat = min(cell2mat(count_perCat));
 
 for i=1:length(common_category)
     step_count = 0;
-    for step=round(min_cat * [stepSize:stepSize:1])
+    for step=round(min_cat * [stepSize:stepSize:0.5])
         % step can start from ceil(count_perCat*stepSize)
         index{i} = index{i}(randperm(count_perCat{i}));
         step_count = step_count + 1;
@@ -220,7 +221,7 @@ end
 
 step_count = 0;
 % start from 5 samples
-for step=round(min_cat * [stepSize:stepSize:1])
+for step=round(min_cat * [stepSize:stepSize:0.5])
     % step can start from ceil(count_perCat*stepSize)
     fprintf('\t %d sample(s)\n',step);
     pause(0.01);
@@ -258,7 +259,7 @@ end
 % End: Train & test target classifier with increasing number of samples %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Recall
+%% Recall
 %source_string = 'kth';
 %target_string = 'hmdb51';
 %feature = 'IDT';
@@ -266,7 +267,7 @@ metrics = 'recall';
 mean_recall_non_svm = zeros(step_count,1);
 mean_recall_a_svm = zeros(step_count,1);
 mean_recall_pmt_svm = zeros(step_count,1);
-mean_recall_ss = mean(stat_ss.recall);
+%mean_recall_ss = mean(stat_ss.recall);
 mean_recall_st = mean(stat_st.recall);
 
 for i=1:step_count
@@ -286,7 +287,7 @@ drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
 
 fprintf('End Drawing.\n');
 
-% Save results
+%% Save results
 save(sprintf([repeat_str '-5-Results-' source_string '-' target_string '-' feature '-' metrics '-stepsize-%.2f.mat'],stepSize), ...
             'stat_ss', 'stat_st', 'stat_a_svm', 'stat_non_svm', 'stat_pmt_svm',...
             'mean_recall_ss', 'mean_recall_st', 'mean_recall_a_svm','mean_recall_non_svm', 'mean_recall_pmt_svm',...

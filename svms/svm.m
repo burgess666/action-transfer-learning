@@ -21,7 +21,17 @@ classdef svm
                     classx(classx==classIndex(i))=sumValue;
                     classx(classx~=sumValue)=-1;
                     classx(classx==sumValue)=1;
-
+                    
+                    %len_pos = length(classx(classx==1));                 
+                    %pos_index = find(classx==1);
+                    %neg_index = find(classx==-1);
+                    
+                    %neg_bal_index = neg_index(randperm(len_pos));
+                    
+                    %classx_bal = [classx(pos_index);classx(neg_bal_index)];                    
+                    %features_bal = [features(pos_index,:);features(neg_bal_index,:)];
+                    
+                    
                     if strcmp(algorithm,'A_SVM')
                         % svmStruct = ws_zero or source.svm.w
                         if ~isstruct(svmStruct)
@@ -45,6 +55,14 @@ classdef svm
                 classx=labels;
                 classx(classx~=1)=-1;
                 classx(classx==1)=1;
+                %len_pos = length(classx(classx==1));                 
+                %pos_index = find(classx==1);
+                %neg_index = find(classx==-1);
+
+                %neg_bal_index = neg_index(randperm(len_pos));
+
+                %classx_bal = [classx(pos_index);classx(neg_bal_index)];                    
+                %features_bal = [features(pos_index);features(neg_bal_index)];
 
                 if strcmp(algorithm,'A_SVM')
                     % svmStruct = ws_zero or source.svm.w
