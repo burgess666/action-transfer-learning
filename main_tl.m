@@ -16,7 +16,7 @@ numClusters = 4000;
 
 % Change line 20, 21, 43, 44, 218
 
-source_string = 'kth';
+source_string = 'weizmann';
 target_string = 'hmdb51';
 
 % 'IDT' or 'STIP'
@@ -40,7 +40,7 @@ else
 end
 
 % Be careful to change it when using different datasets
-source = kth;
+source = weizmann;
 target = hmdb51;
 % Resampling
 
@@ -156,7 +156,7 @@ for i=1:length(common_category)
 end
 % End: Re-sampling and Re-label
 
-% Start: Train on source, test on source %
+%% Start: Train on source, test on source %
 
 ws_zero = zeros(numClusters,1);
 C=0.002;
@@ -211,7 +211,7 @@ min_cat = min(cell2mat(count_perCat));
 
 for i=1:length(common_category)
     step_count = 0;
-    for step=round(min_cat * [stepSize:stepSize:0.5])
+    for step=round(min_cat * [stepSize:stepSize:0.4])
         % step can start from ceil(count_perCat*stepSize)
         index{i} = index{i}(randperm(count_perCat{i}));
         step_count = step_count + 1;
@@ -221,7 +221,7 @@ end
 
 step_count = 0;
 % start from 5 samples
-for step=round(min_cat * [stepSize:stepSize:0.5])
+for step=round(min_cat * [stepSize:stepSize:0.4])
     % step can start from ceil(count_perCat*stepSize)
     fprintf('\t %d sample(s)\n',step);
     pause(0.01);
@@ -237,7 +237,7 @@ for step=round(min_cat * [stepSize:stepSize:0.5])
     source.non_svm{step_count} = svm.train([source.ReSample.train.features; target.ReSample.train.features(target_index,:)], ...
                                             [source.ReSample.train.labels; target.ReSample.train.labels(target_index)], ...
                                             C, ws_zero, 'A_SVM');
-    predict_nonsvm{step_count} = svm.predict(source.non_svm{step_count}, target.ReSample.test.features);
+    predict_nonsvm{step_count} = svm.predict(source.non_svm{step_count}, target.ReSample.test.nor_features);
     stat_non_svm(step_count) = confusionmatStats(target.ReSample.test.labels, predict_nonsvm{step_count});
 
     % A_SVM            
@@ -279,10 +279,10 @@ end
 % Draw comparison figure between SVM, A-SVM, PMT-SVM
 fprintf('Drawing the Recall curves.\n');
 drawComparisonFigure( ['Source: ' source_string ' Target: ' target_string], ...
-    [5:5:50],{ ...
-    mean_recall_pmt_svm(1:10,1),['PMT-SVM']; ...
-    mean_recall_a_svm(1:10,1),['A-SVM']; ...
-    mean_recall_non_svm(1:10,1),['Non-transfer SVM']
+    [5:5:40],{ ...
+    mean_recall_pmt_svm(1:8,1),['PMT-SVM']; ...
+    mean_recall_a_svm(1:8,1),['A-SVM']; ...
+    mean_recall_non_svm(1:8,1),['Non-transfer SVM']
     });
 
 fprintf('End Drawing.\n');

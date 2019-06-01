@@ -3,7 +3,7 @@
 
 % MOSEK optimization toolkit is advised for faster QP optimization which is
 % used in Model Transfer SVM learning procedures.
-for r=2:5
+for r=1:5
     repeat_str = int2str(r);
     addpath svms
     addpath utils
